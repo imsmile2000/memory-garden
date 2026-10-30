@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1793344970867,
+      "tag": "0000_amused_tana_nile",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1793345669364,
+      "tag": "0001_swift_whiplash",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793345949320,
+      "tag": "0002_dapper_darwin",
+      "breakpoints": true
+    }
+  ]
+}
