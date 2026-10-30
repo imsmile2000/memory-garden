@@ -1,6 +1,7 @@
 import {validatePet,type Pet} from './domain.ts';
 import {walkable,type Point} from './navigation.ts';
 export const ROOM_LIMIT=12,PACKETS_PER_LEASE=50,LEASE_UNITS=2000;
+export const FOLLOW_DISTANCE=4.4,DEFAULT_PITCH=-.36;
 export type Pose=Point&{heading:number;moving:boolean};
 export type Motion=Pose&{id:string;pet:Pet;seq:number};
 export function readMotion(value:unknown):Motion|null{
@@ -10,4 +11,5 @@ export function readMotion(value:unknown):Motion|null{
  }catch{return null;}
 }
 export function shouldSendMotion(previous:Pose,current:Pose,elapsed:number){return elapsed>=500&&(Math.hypot(current.x-previous.x,current.z-previous.z)>.025||Math.abs(current.heading-previous.heading)>.1||current.moving!==previous.moving);}
-export function eyePose(p:Point,yaw:number,pitch:number,seated:boolean){const y=seated?1.45:2.02;return {position:{x:p.x,y,z:p.z},target:{x:p.x+Math.sin(yaw)*Math.cos(pitch),y:y+Math.sin(pitch),z:p.z-Math.cos(yaw)*Math.cos(pitch)}};}
+export function eyePose(p:Point,yaw:number,pitch:number,seated:boolean,ground=0){const y=ground+(seated?1.42:1.78);return {position:{x:p.x,y,z:p.z},target:{x:p.x+Math.sin(yaw)*Math.cos(pitch),y:y+Math.sin(pitch),z:p.z-Math.cos(yaw)*Math.cos(pitch)}};}
+export function followPose(p:Point,yaw:number,pitch:number,ground=0,seated=false){const lift=Math.max(.1,Math.min(1.1,-pitch)),focusY=ground+(seated?1:1.25),x=p.x-Math.sin(yaw)*Math.cos(lift)*FOLLOW_DISTANCE,z=p.z+Math.cos(yaw)*Math.cos(lift)*FOLLOW_DISTANCE;return {position:{x,y:focusY+Math.sin(lift)*FOLLOW_DISTANCE,z},target:{x:p.x,y:focusY,z:p.z}};}

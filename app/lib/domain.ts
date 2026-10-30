@@ -15,8 +15,8 @@ function text(value: unknown, max: number, label: string): string {
 }
 export function validateMemorial(input: unknown) {
   const v=record(input);
-  if(!['person','dog','cat'].includes(String(v.kind))) throw new Error('추모 대상을 선택해 주세요.');
-  return {name:text(v.name,40,'이름'),message:text(v.message,600,'편지'),kind:v.kind as Memorial['kind'],photo:validatePhoto(v.photo)};
+  if(!['person','dog','cat'].includes(String(v.kind))) throw new Error('자랑할 친구를 선택해 주세요.');
+  return {name:text(v.name,40,'이름'),message:text(v.message,600,'자랑 글'),kind:v.kind as Memorial['kind'],photo:validatePhoto(v.photo)};
 }
 export function validatePet(input: unknown): Pet {
   const v=record(input);
@@ -35,4 +35,4 @@ export function validatePhoto(input:unknown):string|null{
 export function canWrite(origin: string|null, expected: string, user: string|null) { return !!user && origin===expected; }
 export function canDelete(user: string|null, owner: string) { return !!user && user===owner; }
 export type MemorialComment={id:string;memorialId:string;nickname:string;message:string;createdAt:number;mine:boolean};
-export function validateComment(input:unknown){const v=record(input);return {memorialId:text(v.memorialId,100,'기억'),nickname:text(v.nickname,20,'닉네임'),message:text(v.message,500,'댓글')};}
+export function validateComment(input:unknown){const v=record(input);return {memorialId:text(v.memorialId,100,'자랑'),nickname:text(v.nickname,20,'닉네임'),message:text(v.message,500,'댓글')};}

@@ -46,16 +46,16 @@ export async function POST(req:Request){
   if(b.action==='memorial'){
    const value=validateMemorial(b),id=crypto.randomUUID();
    const owned=await db.select({id:memorials.id}).from(memorials).where(eq(memorials.owner,user));
-   if(owned.length>=10)return response({error:'한 사람당 10개의 기억을 남길 수 있어요.'},400);
+   if(owned.length>=10)return response({error:'한 사람당 10개의 자랑을 올릴 수 있어요.'},400);
    await db.insert(memorials).values({...value,id,owner:user,createdAt:Date.now()});return response({id},201);
   }
   if(b.action==='pet'){
    const pet=validatePet(b);await db.insert(pets).values({...pet,userId:user}).onConflictDoUpdate({target:pets.userId,set:pet});return response({ok:true});
   }
   if(b.action==='gesture'){
-   if(typeof b.id!=='string'||!['flower','candle'].includes(String(b.kind)))return response({error:'마음을 전할 기억을 선택해 주세요.'},400);
+   if(typeof b.id!=='string'||!['flower','candle'].includes(String(b.kind)))return response({error:'마음을 전할 자랑을 선택해 주세요.'},400);
    const found=await db.select({id:memorials.id}).from(memorials).where(eq(memorials.id,b.id));
-   if(!found.length)return response({error:'이 기억을 찾지 못했어요.'},404);
+   if(!found.length)return response({error:'이 자랑을 찾지 못했어요.'},404);
    await db.insert(gestures).values({memorialId:b.id,userId:user,kind:String(b.kind)}).onConflictDoNothing();return response({ok:true});
   }
   return response({error:'요청을 확인해 주세요.'},400);
@@ -69,10 +69,10 @@ export async function POST(req:Request){
 export async function DELETE(req:Request){
  const user=await identity();if(!canWrite(req.headers.get('origin'),requestOrigin(req),user))return response({error:'브라우저 연결과 요청을 확인해 주세요.'},403);
  try{
-  const id=new URL(req.url).searchParams.get('id');if(!id)return response({error:'기억을 선택해 주세요.'},400);
+  const id=new URL(req.url).searchParams.get('id');if(!id)return response({error:'자랑을 선택해 주세요.'},400);
   const db=getDb(),row=(await db.select().from(memorials).where(eq(memorials.id,id)))[0];
-  if(!row)return response({error:'기억을 찾지 못했어요.'},404);
-  if(!canDelete(user,row.owner))return response({error:'직접 남긴 기억만 지울 수 있어요.'},403);
+  if(!row)return response({error:'자랑을 찾지 못했어요.'},404);
+  if(!canDelete(user,row.owner))return response({error:'직접 올린 자랑만 지울 수 있어요.'},403);
   await db.delete(memorials).where(and(eq(memorials.id,id),eq(memorials.owner,user!)));return response({ok:true});
  }catch{return response({error:'삭제하지 못했어요. 다시 시도해 주세요.'},503);}
 }

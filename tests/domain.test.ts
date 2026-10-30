@@ -29,7 +29,7 @@ test('writes require identity and same origin; deletes require ownership', () =>
 });
 test('walking avoids pond and edge while finding a path around water', () => {
   assert.equal(walkable({x:7,z:-5}),false);
-  assert.equal(walkable({x:24,z:0}),false);
+  assert.equal(walkable({x:57,z:0}),false);
   const path=findPath({x:0,z:-5},{x:14,z:-5});
   assert.ok(path.length>2);
   for(const p of path) assert.equal(walkable(p),true);
@@ -50,6 +50,6 @@ test('seven coat colors survive validation for both species',()=>{
 });
 test('expanded garden reaches the new outer walking path but keeps a safe edge',()=>{
  assert.equal(walkable({x:23,z:0}),true);
- assert.equal(walkable({x:26,z:0}),false);
+ assert.equal(walkable({x:60,z:0}),false);
  const path=findPath({x:0,z:10},{x:23,z:0});assert.ok(path.length>0);assert.equal(path.at(-1)?.x,23);assert.ok(path.every(walkable));
 });
