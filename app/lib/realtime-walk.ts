@@ -6,13 +6,13 @@ export type WalkStatus='connecting'|'live'|'offline'|'full'|'budget';
 export function connectWalk(getPose:()=>Pose,getPet:()=>Pet,onVisitors:(rows:Visitor[])=>void,onStatus:(s:WalkStatus)=>void){
  const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
  if(!url||!key){onStatus('offline');return()=>{};}
- const client=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},realtime:{params:{eventsPerSecond:4}}});
+ const client=createClient(url,key,{accessToken:async()=>null,realtime:{params:{eventsPerSecond:4}}});
  const id=crypto.randomUUID(),peers=new Map<string,Motion>();let stopped=false,generation=0,seq=0,lastSent=0,lastPose=getPose(),lastPet='',timer:ReturnType<typeof setInterval>|undefined;
  let retryTimer:ReturnType<typeof setTimeout>|undefined,retries=0;
  let channel:ReturnType<typeof client.channel>|null=null,connected=false,sending=false,reserving=false,remaining=0,reservedPeers=2,expiresAt=0,budgetEnded=false,pendingSync=false;
  const emit=()=>onVisitors([...peers.values()].map(v=>({id:v.id,x:v.x,z:v.z,pet:v.pet,heading:v.heading,moving:v.moving,seq:v.seq})));
  const snapshot=():Motion=>({id,...getPose(),pet:getPet(),seq:++seq});
- async function reserve(){if(reserving||stopped||budgetEnded)return false;reserving=true;try{await ensureVisitor();const r=await fetch('/api/realtime-budget',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({peers:peers.size+1})});if(r.status===429){budgetEnded=true;onStatus('budget');close();return false;}if(!r.ok)throw Error();const lease=await r.json();remaining=lease.packets;reservedPeers=lease.peers;expiresAt=lease.expiresAt;return true;}catch{onStatus('offline');return false;}finally{reserving=false;}}
+ async function reserve(){if(reserving||stopped||budgetEnded)return false;reserving=true;try{await ensureVisitor();const r=await fetch('/api/realtime-budget',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({peers:peers.size+1}),signal:AbortSignal.timeout(10000)});if(r.status===429){budgetEnded=true;onStatus('budget');close();return false;}if(!r.ok)throw Error();const lease=await r.json();remaining=lease.packets;reservedPeers=lease.peers;expiresAt=lease.expiresAt;return true;}catch{onStatus('offline');return false;}finally{reserving=false;}}
  async function send(force=false){
   if(!channel||!connected||sending||document.hidden||budgetEnded)return;
   const pose=getPose(),now=performance.now(),pet=JSON.stringify(getPet());force=force||pendingSync;
