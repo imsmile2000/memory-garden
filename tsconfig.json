@@ -28,8 +28,7 @@
       ]
     },
     "types": [
-      "node",
-      "@cloudflare/workers-types"
+      "node"
     ],
     "allowImportingTsExtensions": true
   },
@@ -49,6 +48,10 @@
     ".wrangler",
     ".sites-runtime",
     "outputs",
-    "work"
+    "work",
+    "worker",
+    "scripts",
+    "vite.config.ts",
+    "cloudflare-env.d.ts"
   ]
 }

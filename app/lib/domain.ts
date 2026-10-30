@@ -28,7 +28,7 @@ export function validatePet(input: unknown): Pet {
 export function validateChat(input:unknown){const v=record(input);return {nickname:text(v.nickname,20,'닉네임'),message:text(v.message,300,'대화')};}
 export function validatePhoto(input:unknown):string|null{
  if(input===undefined||input===null||input==='')return null;
- if(typeof input!=='string'||input.length>350000||!/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(input))throw new Error('사진을 다시 선택해 주세요. JPEG 사진만 저장할 수 있어요.');
+ if(typeof input!=='string'||input.length>100000||!/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(input))throw new Error('사진을 다시 선택해 주세요. JPEG 사진만 저장할 수 있어요.');
  try{const data=atob(input.slice(input.indexOf(',')+1));if(data.charCodeAt(0)!==255||data.charCodeAt(1)!==216||data.charCodeAt(data.length-2)!==255||data.charCodeAt(data.length-1)!==217)throw Error();}catch{throw new Error('올바른 사진을 다시 선택해 주세요.');}
  return input;
 }
