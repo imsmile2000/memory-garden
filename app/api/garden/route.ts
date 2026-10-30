@@ -21,12 +21,12 @@ export async function GET(req:Request){
    lit:sql<boolean>`bool_or(${gestures.kind}='candle' and ${gestures.userId}=${user??''})`
   }).from(gestures).groupBy(gestures.memorialId);
   const pet=user?(await db.select().from(pets).where(eq(pets.userId,user)))[0]:null;
-  const visitors=await db.select().from(presence).where(gt(presence.updatedAt,Date.now()-90000)).limit(50);
+
   const chats=await db.select().from(messages).where(gt(messages.createdAt,Date.now()-604800000)).orderBy(desc(messages.createdAt)).limit(50);
   return response({signedIn:!!user,pet:pet?{name:pet.name,kind:pet.kind,coat:pet.coat,breed:pet.breed}:null,
    messages:chats.reverse().map(({userId,...m})=>({...m,mine:userId===user})),
    memorials:rows.map(({owner,hasPhoto,...m})=>({...m,photoUrl:hasPhoto?`/api/memorial-photo?id=${encodeURIComponent(m.id)}`:null,mine:owner===user,flowers:reactions.find(r=>r.memorialId===m.id)?.flowers??0,candles:reactions.find(r=>r.memorialId===m.id)?.candles??0,flowered:reactions.find(r=>r.memorialId===m.id)?.flowered??false,lit:reactions.find(r=>r.memorialId===m.id)?.lit??false})),
-   visitors:visitors.filter(v=>v.userId!==user).map(v=>({id:v.userId,x:v.x,z:v.z,pet:JSON.parse(v.pet)}))});
+   visitors:[]});
  }catch{ return response({error:'정원 기록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.'},503); }
 }
 export async function POST(req:Request){
@@ -57,12 +57,6 @@ export async function POST(req:Request){
    const found=await db.select({id:memorials.id}).from(memorials).where(eq(memorials.id,b.id));
    if(!found.length)return response({error:'이 기억을 찾지 못했어요.'},404);
    await db.insert(gestures).values({memorialId:b.id,userId:user,kind:String(b.kind)}).onConflictDoNothing();return response({ok:true});
-  }
-  if(b.action==='presence'){
-   const x=Number(b.x),z=Number(b.z);if(!walkable({x,z}))return response({error:'위치를 확인해 주세요.'},400);
-   const pet=validatePet(b.pet),value={x,z,pet:JSON.stringify(pet),updatedAt:Date.now()};
-   await db.insert(presence).values({...value,userId:user}).onConflictDoUpdate({target:presence.userId,set:value});
-   await db.delete(presence).where(lt(presence.updatedAt,Date.now()-120000));return response({ok:true});
   }
   return response({error:'요청을 확인해 주세요.'},400);
  }catch(error){

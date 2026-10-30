@@ -5,7 +5,7 @@
 대상 프로젝트: `https://zqpneogsfzoutgwyunow.supabase.co`
 
 1. 조직의 요금제가 **Free**인지 확인합니다. Pro 전환이나 유료 추가 기능은 선택하지 않습니다.
-2. 새 프로젝트의 SQL Editor에서 `supabase/setup.sql`, `supabase/free-limits.sql` 순서로 한 번 실행합니다. 기존 테이블이 있으면 먼저 상태를 확인하세요. 초기화 SQL은 기존 데이터를 삭제하지 않습니다.
+2. 새 프로젝트의 SQL Editor에서 `supabase/setup.sql`, `supabase/free-limits.sql`, `supabase/realtime-budget.sql` 순서로 한 번 실행합니다. 기존 테이블이 있으면 먼저 상태를 확인하세요. 초기화 SQL은 기존 데이터를 삭제하지 않습니다.
 3. 프로젝트 URL과 Publishable key를 확인합니다. 서비스 역할 키는 앱에 필요하지 않습니다.
 4. Connect → Transaction pooler의 PostgreSQL 연결 문자열을 준비합니다. 비밀번호의 특수문자는 URL 인코딩합니다.
 5. `garden` 스키마는 Supabase Data API에 공개하지 않습니다. 서버의 데이터베이스 연결만 접근하며 클라이언트는 인증키로 테이블을 읽거나 수정할 수 없습니다.
@@ -46,3 +46,5 @@ Free에서는 사용량 초과에 따른 과금 대신 서비스가 제한될 �
 - https://supabase.com/docs/guides/platform/cost-control
 - https://supabase.com/docs/guides/platform/manage-your-usage/egress
 - https://vercel.com/docs/plans/hobby
+
+실시간 연결은 기존 Supabase Publishable key와 Realtime 서비스를 사용합니다. 두 브라우저에서 함께 접속해 `실시간 연결됨` 상태, 즉시 입장·퇴장, 이동 애니메이션을 확인하세요.
