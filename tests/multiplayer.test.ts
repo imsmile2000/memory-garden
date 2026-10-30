@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readMotion,shouldSendMotion,eyePose} from '../app/lib/multiplayer.ts';
+import {readMotion,shouldSendMotion,eyePose,followPose} from '../app/lib/multiplayer.ts';
 import {DEFAULT_PET} from '../app/lib/domain.ts';
 test('motion accepts only finite walkable positions and valid pet, bounded ids',()=>{
  const p={id:'peer-a',x:0,z:10,heading:0,moving:true,pet:DEFAULT_PET,seq:1};
@@ -21,5 +21,6 @@ test('first person stays at player eye level and looks along yaw',()=>{
  assert.equal(v.position.x,5);assert.equal(v.position.z,10);
  assert.ok(v.position.y>1.5&&v.position.y<2.3);
  assert.equal(v.target.x,5);assert.ok(v.target.z<10);
+ const f=followPose({x:5,z:10},0,-.4);assert.ok(f.position.z>12&&f.position.y>f.target.y);assert.equal(f.target.z,10);
  assert.ok(eyePose({x:5,z:10},0,0,true).position.y<v.position.y);
 });
