@@ -1,5 +1,6 @@
 import {createClient} from '@supabase/supabase-js';
 import {ensureVisitor} from './visitor-client';
+import {createRefresh} from './refresh';
 import {readMotion,shouldSendMotion,ROOM_LIMIT,type Motion,type Pose} from './multiplayer';
 import type {Pet,Visitor} from './domain';
 export type WalkStatus='connecting'|'live'|'offline'|'full'|'budget';
@@ -12,13 +13,15 @@ export function connectWalk(getPose:()=>Pose,getPet:()=>Pet,onVisitors:(rows:Vis
  let channel:ReturnType<typeof client.channel>|null=null,connected=false,sending=false,reserving=false,remaining=0,reservedPeers=2,expiresAt=0,budgetEnded=false,pendingSync=false;
  const emit=()=>onVisitors([...peers.values()].map(v=>({id:v.id,x:v.x,z:v.z,pet:v.pet,heading:v.heading,moving:v.moving,seq:v.seq})));
  const snapshot=():Motion=>({id,...getPose(),pet:getPet(),seq:++seq});
- async function reserve(){if(reserving||stopped||budgetEnded)return false;reserving=true;try{await ensureVisitor();const r=await fetch('/api/realtime-budget',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({peers:peers.size+1}),signal:AbortSignal.timeout(10000)});if(r.status===429){budgetEnded=true;onStatus('budget');close();return false;}if(!r.ok)throw Error();const lease=await r.json();remaining=lease.packets;reservedPeers=lease.peers;expiresAt=lease.expiresAt;return true;}catch{onStatus('offline');return false;}finally{reserving=false;}}
+ const reserve=createRefresh(async()=>{if(stopped||budgetEnded)return false;reserving=true;try{await ensureVisitor();const r=await fetch('/api/realtime-budget',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({peers:peers.size+1}),signal:AbortSignal.timeout(10000)});if(r.status===429){budgetEnded=true;onStatus('budget');close();return false;}if(!r.ok)throw Error();const lease=await r.json();remaining=lease.packets;reservedPeers=lease.peers;expiresAt=lease.expiresAt;retries=0;if(connected)onStatus('live');return true;}catch{onStatus('offline');return false;}finally{reserving=false;}});
  async function send(force=false){
   if(!channel||!connected||sending||document.hidden||budgetEnded)return;
   const pose=getPose(),now=performance.now(),pet=JSON.stringify(getPet());force=force||pendingSync;
   if(!force&&pet===lastPet&&!shouldSendMotion(lastPose,pose,now-lastSent))return;
   if(now-lastSent<500){if(force)pendingSync=true;return;}
   sending=true;try{
+   if(remaining<=8&&!reserving)void reserve();
+   if(remaining<=0&&reserving)return;
    if((remaining<=0||Date.now()>expiresAt||peers.size+1>reservedPeers)&&!await reserve()){scheduleRetry();return;}
    if(!channel||!connected)return;
    remaining--;pendingSync=false;lastSent=now;lastPose={...pose};lastPet=pet;
@@ -30,7 +33,9 @@ export function connectWalk(getPose:()=>Pose,getPet:()=>Pet,onVisitors:(rows:Vis
  function scheduleRetry(){if(stopped||budgetEnded||document.hidden||retryTimer)return;onStatus('offline');close();if(retries>=6)return;retryTimer=setTimeout(()=>{retryTimer=undefined;void open();},Math.min(1000*2**retries++,30000));}
  async function open(){
   if(stopped||document.hidden||budgetEnded)return;const run=++generation;onStatus('connecting');
-  if(!await reserve()){scheduleRetry();return;}if(stopped||run!==generation)return;
+  // Admission uses websocket presence immediately, not a database round trip.
+  // Four startup packets fit within the lease's256-unit protocol margin.
+  remaining=4;reservedPeers=ROOM_LIMIT;expiresAt=Date.now()+10000;
   const room=client.channel('garden-walk-v2',{config:{broadcast:{self:false},presence:{key:id}}});channel=room;
   room.on('broadcast',{event:'motion'},({payload})=>{if(stopped||room!==channel)return;const packet=readMotion(payload);if(!packet||packet.id===id||!room.presenceState()[packet.id])return;const old=peers.get(packet.id);if(!old&&peers.size>=ROOM_LIMIT-1)return;if(old&&packet.seq<=old.seq)return;peers.set(packet.id,packet);emit();});
   room.on('presence',{event:'sync'},()=>{
@@ -42,7 +47,7 @@ export function connectWalk(getPose:()=>Pose,getPet:()=>Pet,onVisitors:(rows:Vis
   });
   room.subscribe(async status=>{
    if(stopped||room!==channel)return;
-   if(status==='SUBSCRIBED'){retries=0;connected=true;onStatus('live');const result=await room.track(snapshot());if(stopped||room!==channel)return;if(result!=='ok'){scheduleRetry();return;}if(timer)clearInterval(timer);timer=setInterval(()=>void send(),500);}
+   if(status==='SUBSCRIBED'){if(run!==generation)return;connected=true;onStatus('live');const result=await room.track(snapshot());if(stopped||room!==channel)return;if(result!=='ok'){scheduleRetry();return;}if(timer)clearInterval(timer);timer=setInterval(()=>void send(),500);if(!reserving)void reserve().then(ok=>{if(!ok&&!stopped&&room===channel)scheduleRetry();});}
    else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'||status==='CLOSED'){scheduleRetry();}
   });
  }
