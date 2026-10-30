@@ -1,14 +1,14 @@
 import 'server-only';
-import {createServerClient} from '@supabase/ssr';
 import {cookies} from 'next/headers';
-export async function authClient() {
- const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
- if(!url||!key) return null;
- const store=await cookies();
- return createServerClient(url,key,{cookies:{getAll:()=>store.getAll(),setAll:values=>{for(const {name,value,options} of values)store.set(name,value,options);}}});
-}
-export async function identity():Promise<string|null> {
- const client=await authClient();
- if(!client) return null;
- try {const {data,error}=await client.auth.getUser();return error?null:data.user?.id??null;} catch{return null;}
+import {newVisitor,verifyVisitor} from './visitor-token';
+export async function identity(create=false):Promise<string|null>{
+ const secret=process.env.GARDEN_SESSION_SECRET||process.env.DATABASE_URL;
+ if(!secret)return null;
+ const store=await cookies(),name='garden-visitor';
+ const existing=verifyVisitor(store.get(name)?.value,secret);
+ if(existing)return existing;
+ if(!create)return null;
+ const visitor=newVisitor(secret);
+ store.set(name,visitor.token,{httpOnly:true,secure:process.env.NODE_ENV==='production',sameSite:'lax',path:'/',maxAge:31536000});
+ return visitor.id;
 }

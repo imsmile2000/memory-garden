@@ -1,3 +1,4 @@
+import {requestOrigin} from '../../lib/request-origin';
 import {quotaError} from '../../lib/quota-error';
 import {identity} from '../../lib/auth';
 import {getDb} from '../../../db/index';
@@ -30,8 +31,8 @@ export async function GET(req:Request){
 }
 export async function POST(req:Request){
  const user=await identity();
- if(!user)return response({error:'기록을 저장하려면 로그인해 주세요.',signIn:true},401);
- if(!canWrite(req.headers.get('origin'),new URL(req.url).origin,user))return response({error:'요청을 확인할 수 없어요.'},403);
+ if(!user)return response({error:'브라우저 연결을 준비하지 못했어요. 새로고침해 주세요.',signIn:true},401);
+ if(!canWrite(req.headers.get('origin'),requestOrigin(req),user))return response({error:'요청을 확인할 수 없어요.'},403);
  if(Number(req.headers.get('content-length'))>400000)return response({error:'사진이나 입력 내용이 너무 커요.'},413);
  let b:Record<string,unknown>;
  try { const raw=await req.text();if(raw.length>400000)return response({error:'사진이나 입력 내용이 너무 커요.'},413);b=JSON.parse(raw);if(!b||typeof b!=='object')throw Error(); } catch{return response({error:'입력 내용을 확인해 주세요.'},400);}
@@ -72,7 +73,7 @@ export async function POST(req:Request){
  }
 }
 export async function DELETE(req:Request){
- const user=await identity();if(!canWrite(req.headers.get('origin'),new URL(req.url).origin,user))return response({error:'로그인과 요청을 확인해 주세요.'},403);
+ const user=await identity();if(!canWrite(req.headers.get('origin'),requestOrigin(req),user))return response({error:'브라우저 연결과 요청을 확인해 주세요.'},403);
  try{
   const id=new URL(req.url).searchParams.get('id');if(!id)return response({error:'기억을 선택해 주세요.'},400);
   const db=getDb(),row=(await db.select().from(memorials).where(eq(memorials.id,id)))[0];

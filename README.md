@@ -4,11 +4,11 @@
 
 - 품종·이름·털 색 선택과 산책, 벤치에 앉기, 반려동물 상호작용
 - 사진·편지·꽃·촛불·댓글로 남기는 기억
-- 이메일 로그인, 사용자 대화와 정원 방문자 표시
+- 로그인 없이 사용자 대화와 정원 방문자 표시
 
 ## 실행
 
-Node.js 22.13 이상을 사용합니다. Next.js, React, Three.js, PostgreSQL/Drizzle, Supabase Auth로 구성됩니다.
+Node.js 22.13 이상을 사용합니다. Next.js, React, Three.js, PostgreSQL/Drizzle, 브라우저 방문자 쿠키로 구성됩니다.
 
 ```sh
 npm ci
@@ -21,7 +21,7 @@ npm run dev
 
 [Vercel·Supabase 설정 안내](docs/vercel-deployment.md)를 따라 무료 프로젝트와 환경 변수를 연결하세요. 데이터베이스에는 `supabase/setup.sql`, `supabase/free-limits.sql`을 차례로 적용합니다. Vercel에서 이 저장소를 Next.js 프로젝트로 가져오고 Hobby 요금제를 유지하세요.
 
-현재 소스는 Vercel용 빌드 검증을 마쳤지만, 실제 Supabase 연결 및 공개 배포는 아직 확인되지 않았습니다. 로컬 미리보기의 테스트 기록은 업로드하지 않습니다. 비밀번호·환경 변수·로컬 데이터는 Git에서 제외합니다.
+공개 주소: https://memory-garden-iota.vercel.app. Supabase 테이블과 저장 제한이 적용되어 있습니다. 로컬 미리보기의 테스트 기록은 업로드하지 않습니다. 비밀번호·환경 변수·로컬 데이터는 Git에서 제외합니다.
 
 ## 무료 운영 제한
 
@@ -53,3 +53,5 @@ node tests/vercel-http.mjs
 ```
 
 `tests/api-integration.mjs`, `tests/history-integration.py`, `drizzle/`, `docs/sites-runtime.md`는 이전 Sites/D1 환경의 기록입니다. 새 Supabase 환경에 실행하지 마세요. 현재 PostgreSQL 설정은 `db/`, `drizzle-postgres/`, `supabase/`를 사용합니다.
+
+로그인 기능은 없습니다. 서명된 방문자 쿠키로 이 브라우저에서 남긴 글을 구분합니다. 쿠키를 지우거나 다른 브라우저를 사용하면 이전 글의 소유자로 인식되지 않습니다.
